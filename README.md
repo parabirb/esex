@@ -15,6 +15,10 @@ no lol i'll lyk when it is
 no lol
 ### will this support anything other than betterdiscord
 no lol
+### will this support group chats or servers
+no lol
+### what's the licensing like
+this project and all deps are public domain.
 
 ## credits
 thanks to dchest for tweetnacl.js and ed2curve. thanks to djb for the original version of tweetnacl.

@@ -50,7 +50,7 @@ const doubleRatchetFunctions = {
     // AEAD encryption
     ENCRYPT: function ENCRYPT(mk, plaintext, associated_data) {
         // get MAC for the AD
-        const AD_MAC = _crypto.auth.full(associated_data, mk);
+        const AD_MAC = _crypto.auth(associated_data, mk);
         // generate a nonce
         const NONCE = _crypto.randomBytes(24);
         // encrypt the plaintext
@@ -65,7 +65,7 @@ const doubleRatchetFunctions = {
     // AEAD decryption
     DECRYPT: function DECRYPT(mk, ciphertext, associated_data) {
         // get MAC for the AD
-        const AD_MAC = _crypto.auth.full(associated_data, mk);
+        const AD_MAC = _crypto.auth(associated_data, mk);
         // STOP! YOU'VE VIOLATED THE LAW!
         if (!_crypto.verify(AD_MAC, _crypto.util.decodeBase64(ciphertext.mac))) {
             // throw an error

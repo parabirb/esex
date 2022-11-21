@@ -3318,20 +3318,27 @@ module.exports = class esex {
             console.log(messageContent);
         });
 
-        // monkeypatch into our event dispatchers
+        // monkeypatch into the event dispatcher
         this.clearEventPatch = BdApi.Patcher.before("esex", BdApi.findModuleByProps("dispatch", "subscribe"), "dispatch", (ctx, args) => {
             // get the event
             let event = args[0];
             // if a message was received or an edit to a message was received
             if (event.type === "MESSAGE_CREATE" || event.type === "MESSAGE_UPDATE") {
+                // return if we're not in a DM
+                if (!this.inDM) return;
             }
             // if multiple messages were loaded
             else if (["LOAD_MESSAGES_SUCCESS", "LOAD_MESSAGES_AROUND_SUCCESS", "LOAD_RECENT_MENTIONS_SUCCESS", "LOAD_PINNED_MESSAGES_SUCCESS"].includes(event.type)) {
+                // return if we're not in a DM
+                if (!this.inDM) return;
             }
             // if a channel was selected
             else if (event.type === "CHANNEL_SELECT") {
+                console.log(event);
+                // set variables
                 this.inDM = event.guildId === null;
                 this.channelId = event.channelId;
+                this.cryptData = "sex";
             }
         });
     }
