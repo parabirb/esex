@@ -119,8 +119,8 @@ module.exports = class esex {
         if (this.keypair) {
             // decode the keypair
             this.keypair = {
-                publicKey: nacl.util.decodeBase64(this.keypair.publicKey),
-                secretKey: nacl.util.decodeBase64(this.keypair.secretKey)
+                publicKey: brailleToBytes(this.keypair.publicKey),
+                secretKey: brailleToBytes(this.keypair.secretKey)
             };
         }
         // if we don't
@@ -129,8 +129,8 @@ module.exports = class esex {
             this.keypair = nacl.sign.keyPair();
             // save it
             BdApi.Data.save("esex", "keypair", {
-                publicKey: nacl.util.encodeBase64(this.keypair.publicKey),
-                secretKey: nacl.util.encodeBase64(this.keypair.secretKey)
+                publicKey: bytesToBraille(this.keypair.publicKey),
+                secretKey: bytesToBraille(this.keypair.secretKey)
             });
         }
 
@@ -138,16 +138,12 @@ module.exports = class esex {
         this.clearSendMessagePatch = BdApi.Patcher.before("esex", BdApi.findModuleByProps("sendMessage"), "sendMessage", (ctx, args) => {
             let dmId = args[0];
             let messageContent = args[1];
-            console.log(dmId);
-            console.log(messageContent);
         });
 
         // monkeypatch into the edit message function
         this.clearEditMessagePatch = BdApi.Patcher.before("esex", BdApi.findModuleByProps("editMessage"), "editMessage", (ctx, args) => {
             let dmId = args[0];
             let messageContent = args[2];
-            console.log(dmId);
-            console.log(messageContent);
         });
 
         // monkeypatch into the event dispatcher
