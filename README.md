@@ -5,10 +5,16 @@ discord is a terrible company staffed by terrible people. do you want your data 
 yeah. not the greatest situation. worry not, because esex is here. esex isn't perfect, but it does the job. you will need betterdiscord to use esex (sorry if you don't vibe with it).
 
 ## goals
-esex's goal is to implement secure end-to-end encryption in one-on-one DMs (no group messaging, sorry) with perfect forward secrecy. esex does *not* support multiple devices.
+esex's goal is to implement secure end-to-end encryption in one-on-one DMs (no group messaging, sorry) with perfect forward secrecy.
 
 ## is it done
 no lol i'll lyk when it is
+
+## faq
+### will this support multiple devices
+no lol
+### will this support anything other than betterdiscord
+no lol
 
 ## credits
 thanks to dchest for tweetnacl.js and ed2curve. thanks to djb for the original version of tweetnacl.

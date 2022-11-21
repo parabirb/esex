@@ -16,8 +16,6 @@
 
 // _crypto will be our nacl object
 let _crypto = window.nacl;
-// ed2curve time bb
-let ed2curve = window.ed2curve;
 
 // required functions for double ratchet
 const doubleRatchetFunctions = {
