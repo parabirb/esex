@@ -1,1 +1,1 @@
-["meta.js", "deps/nacl-fast.js", "deps/nacl-auth.js", "deps/nacl-util.js", "deps/ed2curve.js", "deps/double-ratchet.js", "plugin.js"]
+["meta.js", "deps/nacl-fast.js", "deps/nacl-auth.js", "deps/nacl-util.js", "deps/ed2curve.js", "deps/double-ratchet.js", "format.js", "plugin.js"]
