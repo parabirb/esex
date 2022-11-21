@@ -175,7 +175,7 @@ class doubleRatchet {
     }
 
     // compute master key
-    async computeMasterKey() {
+    computeMasterKey() {
         // are we initiator?
         if (this.initiator) {
             // if so, we do:
@@ -231,7 +231,7 @@ class doubleRatchet {
     }
 
     // encryption func
-    async encrypt(plaintext) {
+    encrypt(plaintext) {
         // we want our plaintext to be an array of u8s
         plaintext = _crypto.util.decodeUTF8(plaintext);
         // get CKs and MK
