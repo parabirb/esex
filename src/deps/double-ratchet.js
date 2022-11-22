@@ -119,7 +119,10 @@ class doubleRatchet {
     constructor(data = null) {
         if (data !== null) {
             for (let key of Object.keys(data)) {
-                if (doubleRatchetFunctions.types[key] === "buf") {
+                if (!data[key]) {
+                    this[key] = data[key];
+                }
+                else if (doubleRatchetFunctions.types[key] === "buf") {
                     this[key] = _crypto.util.decodeBase64(data[key]);
                 }
                 else if (doubleRatchetFunctions.types[key] === "nBuf") {
@@ -317,7 +320,7 @@ class doubleRatchet {
     }
 
     // decrypt function
-    async decrypt(message) {
+    decrypt(message) {
         // try skipped message keys
         let plaintext = this.TrySkippedMessageKeys(message.header, message.ciphertext);
         // check if we have plaintext
@@ -352,7 +355,7 @@ class doubleRatchet {
     export() {
         let exports = {};
         for (let key of Object.keys(doubleRatchetFunctions.types)) {
-            if (this[key] !== undefined) {
+            if (this[key]) {
                 let type = doubleRatchetFunctions.types[key];
                 if (type === "nBuf") {
                     exports[key] = this[key];
@@ -370,11 +373,17 @@ class doubleRatchet {
                     let base64MKSKIPPED = this[key];
                     for (let mkSkippedKey of Object.keys(base64MKSKIPPED)) {
                         for (let secondSkippedKey of Object.keys(base64MKSKIPPED[mkSkippedKey])) {
+                            console.log(mkSkippedKey);
+                            console.log(secondSkippedKey);
+                            console.log(base64MKSKIPPED);
                             base64MKSKIPPED[mkSkippedKey][secondSkippedKey] = _crypto.util.encodeBase64(base64MKSKIPPED[mkSkippedKey][secondSkippedKey]);
                         }
                     }
                     exports[key] = base64MKSKIPPED;
                 }
+            }
+            else {
+                exports[key] = this[key];
             }
         }
         return exports;

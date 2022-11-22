@@ -3013,7 +3013,10 @@ class doubleRatchet {
     constructor(data = null) {
         if (data !== null) {
             for (let key of Object.keys(data)) {
-                if (doubleRatchetFunctions.types[key] === "buf") {
+                if (!data[key]) {
+                    this[key] = data[key];
+                }
+                else if (doubleRatchetFunctions.types[key] === "buf") {
                     this[key] = _crypto.util.decodeBase64(data[key]);
                 }
                 else if (doubleRatchetFunctions.types[key] === "nBuf") {
@@ -3211,7 +3214,7 @@ class doubleRatchet {
     }
 
     // decrypt function
-    async decrypt(message) {
+    decrypt(message) {
         // try skipped message keys
         let plaintext = this.TrySkippedMessageKeys(message.header, message.ciphertext);
         // check if we have plaintext
@@ -3246,7 +3249,7 @@ class doubleRatchet {
     export() {
         let exports = {};
         for (let key of Object.keys(doubleRatchetFunctions.types)) {
-            if (this[key] !== undefined) {
+            if (this[key]) {
                 let type = doubleRatchetFunctions.types[key];
                 if (type === "nBuf") {
                     exports[key] = this[key];
@@ -3269,6 +3272,9 @@ class doubleRatchet {
                     }
                     exports[key] = base64MKSKIPPED;
                 }
+            }
+            else {
+                exports[key] = this[key];
             }
         }
         return exports;
@@ -3397,14 +3403,14 @@ module.exports = class esex {
         // decode the braille data
         let decodedMessage = decodeMessage(message.content);
         // load crypt data for the message
-        let cryptData = BdApi.Data.load("esex", message.channel_id);
+        let cryptData = this.channelId === message.channel_id ? this.cryptData : BdApi.Data.load("esex", message.channel_id);
         // if there's no braille message, return but with insecure
         if (!decodedMessage) return `[insecure] ${message.content}`;
         // if we don't have any crypt data and the message isn't a handshake, return
-        if (!cryptData && message.type !== "initHandshake") return `[insecure] ${message.content}`;
+        if (!cryptData && decodedMessage.type !== "initHandshake") return `[insecure] ${message.content}`;
         // if the braille's in our crypt data
         let brailleHash = bytesToBraille(nacl.hash(nacl.util.decodeUTF8(message.content)));
-        if (cryptData.messages[brailleHash]) {
+        if (cryptData && cryptData.messages[brailleHash]) {
             return cryptData.messages[brailleHash];
         }
         // if it's a handshake and we have cryptdata
@@ -3440,7 +3446,7 @@ module.exports = class esex {
             // save it
             BdApi.Data.save("esex", message.channel_id, cryptData);
             // send handshake message
-            BdApi.findModuleByProps("sendMessage").sendMessage(message.channel_id, {content: encodedHandshake});
+            BdApi.findModuleByProps("sendMessage").sendMessage(message.channel_id, {content: encodedHandshake, _esex: "system"});
             // return the message content
             return "[esex] Handshake initialize";
         }
@@ -3471,9 +3477,12 @@ module.exports = class esex {
         else if (cryptData.state === "encrypted" && decodedMessage.type === "message") {
             // try
             try {
+                // create a session
+                let session = new secretSession(cryptData.session);
                 // decrypt
-                let {cleartext} = session.decrypt(decodedMessage.payload);
+                let { cleartext } = session.decrypt(decodedMessage.payload);
                 // modify cryptdata object
+                cryptData.session = session.export();
                 cryptData.messages[brailleHash] = cleartext;
                 // save thee cryptdata
                 BdApi.Data.save("esex", message.channel_id, cryptData);
@@ -3517,15 +3526,14 @@ module.exports = class esex {
 
         // monkeypatch into the send message function
         this.clearSendMessagePatch = BdApi.Patcher.before("esex", BdApi.findModuleByProps("sendMessage"), "sendMessage", (ctx, args) => {
-            // return if we aren't in a DM
-            if (!this.inDM) return;
+            // return if we aren't in a DM or if it's a system message
+            if (!this.inDM || args[1]._esex === "system") return;
             // get the dm id and message content
             let dmId = args[0];
             let message = args[1];
             // refresh cryptdata
             this.cryptData = BdApi.Data.load("esex", this.channelId);
             this.session = this.cryptData ? new secretSession(this.cryptData.session) : null;
-            console.log(message);
             // if it's the help command
             if (message.content === "esex-bd help") {
                 // alert
@@ -3551,7 +3559,7 @@ esex-bd insecure (text) - Sends a message insecurely to the open user.
                 message.content = "";
             }
             // if it's the safety braille
-            else if (this.session && cryptData.state === "encrypted" && message.content === "esex-bd safety") {
+            else if (this.session && this.cryptData.state === "encrypted" && message.content === "esex-bd safety") {
                 // alert with the safety braille
                 BdApi.UI.alert("esex safety braille", `If your braille looks the same as that of the other person's, your connection is secure.
 \`\`\`
@@ -3596,9 +3604,10 @@ ${bytestoBraille(nacl.hash(this.session.identityKey > this.session.theirIdentity
             else if (this.session) {
                 // encrypt the message
                 let msg = encodeMessage(this.session.encrypt(message.content));
+                console.log(msg);
                 // modify cryptdata
                 this.cryptData.session = this.session.export();
-                this.cryptData[bytesToBraille(nacl.hash(nacl.util.decodeUTF8(msg)))] = message.content;
+                this.cryptData.messages[bytesToBraille(nacl.hash(nacl.util.decodeUTF8(msg)))] = message.content;
                 // save cryptdata
                 BdApi.Data.save("esex", this.channelId, this.cryptData);
                 // set the message
@@ -3608,20 +3617,23 @@ ${bytestoBraille(nacl.hash(this.session.identityKey > this.session.theirIdentity
 
         // monkeypatch into the edit message function
         this.clearEditMessagePatch = BdApi.Patcher.before("esex", BdApi.findModuleByProps("editMessage"), "editMessage", (ctx, args) => {
+            console.log("1");
             // return if we aren't in a DM
             if (!this.inDM) return;
+            console.log("2");
             // refresh cryptdata
             this.cryptData = BdApi.Data.load("esex", this.channelId);
             this.session = this.cryptData ? new secretSession(this.cryptData.session) : null;
             // if we're not in a session we can just return
             if (!this.cryptData || !this.cryptData.state !== "encrypted") return;
+            console.log("3");
             // get the message content
             let message = args[2];
             // encrypt it
             let brailleMessage = encodeMessage(this.session.encrypt(message));
             // modify cryptdata
             this.cryptData.session = this.session.export();
-            this.cryptData[bytesToBraille(nacl.hash(nacl.util.decodeUTF8(brailleMessage)))] = message;
+            this.cryptData.messages[bytesToBraille(nacl.hash(nacl.util.decodeUTF8(brailleMessage)))] = message;
             // save the cryptdata
             BdApi.Data.save("esex", this.channelId, this.cryptData);
             // set the message
